@@ -1,3 +1,8 @@
+/********************************************************************************/
+/* Loviisa Embedded Operating System * Copyright (C) LigerWays, 2013-2021       */
+/********************************************************************************/
+/* Generic memory operations, may be replaced with CRT library functions        */
+/********************************************************************************/
 #include "lvs_mem.h"
 
 void lvs_memset(void* ptr, unsigned char value, int size)

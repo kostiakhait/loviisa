@@ -1,30 +1,39 @@
+/********************************************************************************/
+/* Loviisa Embedded Operating System * Copyright (C) LigerWays, 2013-2021       */
+/********************************************************************************/
+/* Timer management functions                                                   */
+/********************************************************************************/
 #ifndef __LVS_TIME_H__
 #define __LVS_TIME_H__
 
 #include "lvs_event.h"
 
+// Timer handler structure
 typedef struct __LVS_TIMER
 {
-  unsigned long tick_count;
-  unsigned long period_msec;
-  unsigned long epoch;
-  LVS_EVENT_ID_T event;
-  unsigned char enabled;
-  unsigned char periodic;
-  struct __LVS_TIMER* next;
+  unsigned long tick_count;                                       // Global ticks at the last triggering moment
+  unsigned long period_msec;                                      // Timer period
+  unsigned long epoch;                                            // Number how much times timer was triggered
+  LVS_EVENT_ID_T event;                                           // Event triggered by the timer (timer structure will be an argument)
+  unsigned char enabled;                                          // 1 if timer is on, i.e. launched
+  unsigned char periodic;                                         // 1 if timer is periodic, 0 if single shot
+  struct __LVS_TIMER* next;                                       // Next timer structure
 } LVS_TIMER_T;
 
-extern LVS_TIMER_T* __lvs_timers;
+extern LVS_TIMER_T* __lvs_timers;                                 // List of timer structures
 
-void lvs_TimerTick(void);
-unsigned long lvs_GetTickCount(void);
+void lvs_TimerTick(void);                                         // Function to be triggered by RTC on each HW timer event
+unsigned long lvs_GetTickCount(void);                             // Get number of RTC ticks
 
+// Define logical timer (once in C file in a global context)
 #define LVS_DEFINE_TIMER(timer)                                   \
   LVS_TIMER_T __lvs_timer_##timer;
 
+// Declare logical timer (anywhere before use)
 #define LVS_USE_TIMER(timer)                                      \
   extern LVS_TIMER_T __lvs_timer_##timer;
 
+// Initialize timer with event, period and periodic or single shot info
 #define LVS_INIT_TIMER(timer, _event, period, _periodic)          \
   {                                                               \
      __lvs_timer_##timer.tick_count = 0L;                         \
@@ -37,17 +46,20 @@ unsigned long lvs_GetTickCount(void);
      __lvs_timers = &__lvs_timer_##timer;                         \
   }
 
+// Run the given timer
 #define LVS_START_TIMER(timer)                                    \
   {                                                               \
     __lvs_timer_##timer.tick_count = lvs_GetTickCount();          \
     __lvs_timer_##timer.enabled = 1;                              \
   }
 
+// Stop the given timer
 #define LVS_STOP_TIMER(timer)                                     \
   {                                                               \
     __lvs_timer_##timer.enabled = 0;                              \
   }
 
+// Get paramters from existing timer structure
 #define LVS_GET_TIMER_PERIOD_MS(timer) (__lvs_timer_##timer.period_msec)
 #define LVS_GET_TIMER_EPOCH(timer) (__lvs_timer_##timer.epoch)
 #define LVS_IS_TIMER_ENABLED(timer) (__lvs_timer_##timer.enabled)

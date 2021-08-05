@@ -1,0 +1,21 @@
+/********************************************************************************/
+/* Loviisa Embedded Operating System * Copyright (C) LigerWays, 2013-2021       */
+/********************************************************************************/
+/* Loviisa error codes                                                          */
+/********************************************************************************/
+#ifndef __LVS_ERROR_H__
+#define __LVS_ERROR_H__
+
+typedef enum __LVS_ERROR
+{
+  LVS_OK              = 0x0000,     // No error
+  LVS_NO_HANDLER      = 0x0001,     // Event of operation has no handler
+  LVS_INTERRUPT       = 0x0002,     // Event is interrupted for some reason
+  LVS_IO_ERROR        = 0x0101,     // Input/output problem (generic)
+  LVS_WRONG_ARGUMENT  = 0x0201,     // Improper argument value provided for the operation
+  LVS_OVERFLOW        = 0x0202,     // Queue overflow
+  LVS_UNDERFLOW       = 0x0203,     // Queue underflow
+  LVS_WRONG_FLAG_NO   = 0x0204      // Flag number too big
+} LVS_ERROR_T;                      // Error response type
+
+#endif

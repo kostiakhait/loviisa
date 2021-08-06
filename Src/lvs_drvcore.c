@@ -52,6 +52,13 @@ static LVS_ERROR_T __lvs_SyncPipe(LVS_PIPE_T* pipe)
         break;
     }
   };
+  if ((size > 0) && pipe->on_data)
+  {
+    LVS_EVENT_T event;
+    event.id = pipe->on_data;
+    event.payload = pipe;
+    lvs_SendEvent(event);
+  }
   pipe->source_lock = pipe->target_lock = 0;
   return result;
 };

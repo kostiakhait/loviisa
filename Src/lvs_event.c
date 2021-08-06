@@ -7,6 +7,7 @@
 #include "lvs_config.h"
 
 void lvs_OnTimer(void);
+void lvs_SyncDrvBufs(void);
 
 LVS_DEFINE_EVENT_QUEUE(LVS_EVENT_QUEUE_SIZE);
 
@@ -94,6 +95,7 @@ void lvs_RunScheduler(void)
     if (err == LVS_OK)
       lvs_ScheduleEvent(event);
     lvs_OnTimer();
+    lvs_SyncDrvBufs();
     LVS_IDLE();
   } while (!__stop_scheduler);
   __stop_scheduler = 0;

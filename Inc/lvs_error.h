@@ -11,6 +11,9 @@ typedef enum __LVS_ERROR
   LVS_OK              = 0x0000,     // No error
   LVS_NO_HANDLER      = 0x0001,     // Event of operation has no handler
   LVS_INTERRUPT       = 0x0002,     // Event is interrupted for some reason
+  LVS_RESOURCE_LOCKED = 0x0003,     // Given resource is locked
+  LVS_NOT_READY       = 0x0004,     // Resource not ready
+  LVS_BUSY            = 0x0005,     // Resource busy
   LVS_IO_ERROR        = 0x0101,     // Input/output problem (generic)
   LVS_WRONG_ARGUMENT  = 0x0201,     // Improper argument value provided for the operation
   LVS_OVERFLOW        = 0x0202,     // Queue overflow

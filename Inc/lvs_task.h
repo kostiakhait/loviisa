@@ -23,6 +23,10 @@ struct ___lvs_task_context_##task                             \
 // End task context
 #define LVS_TASK_CONTEXT_END(task)                            \
   } __lvs_task_context_##task;
+
+#define LVS_USE_TASK(task)                                    \
+  LVS_ERROR_T __lvs_task_start_##task(void* arg);             \
+  LVS_ERROR_T __lvs_task_init_##task(void* arg);              \
   
 // Start task initialization section
 #define LVS_TASK_INIT(task)                                   \
@@ -75,5 +79,6 @@ struct ___lvs_task_context_##task                             \
 
 // Get task loop counter
 #define LVS_TASK_COUNTER(task) (lvs_context->__counter)
+#define LVS_TASK_PARAM(task) (lvs_context->params)
 
 #endif

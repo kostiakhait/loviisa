@@ -10,6 +10,21 @@
 #include "lvs_config.h"
 #include "lvs_bitmem.h"
 
+#define LVS_IF_PASSED(ms)                                            \
+  {                                                                  \
+    static unsigned long __lvs_start_time = 0;                       \
+    if (!__lvs_start_time) __lvs_start_time = lvs_GetTickCount();    \
+    if (lvs_GetTickCount() - __lvs_start_time > LVS_TICKS_PER_SECOND * ms / 1000) \
+    {
+
+#define LVS_ELSE()                                                   \
+    } else {                                                         \
+
+#define LVS_ENDIF()                                                  \
+      __lvs_start_time = lvs_GetTickCount();                         \
+    }                                                                \
+  }
+
 // Task or event handler waits for a given condition
 #define LVS_WAIT_FOR(condition)               \
   {                                           \

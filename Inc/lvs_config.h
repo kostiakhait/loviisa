@@ -7,7 +7,7 @@
 #ifndef __LVS_CONFIG_H__
 #define __LVS_CONFIG_H__
 
-#define LVS_EVENT_QUEUE_SIZE 32         // Maximum size of the event queue in events
+#define LVS_EVENT_QUEUE_SIZE 16         // Maximum size of the event queue in events
 
 // Define LVS_IDLE as a function that you want to be executed all the time when
 // events scheduler has no event to process

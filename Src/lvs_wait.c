@@ -48,6 +48,5 @@ void lvs_Delay(int msec)
   {
       ticks_passed = lvs_GetTickCount() - start_time;
       period_in_ticks = (msec * LVS_TICKS_PER_SECOND) / 1000;
-      lvs_PerformScheduler();
   } while (ticks_passed < period_in_ticks);
 };

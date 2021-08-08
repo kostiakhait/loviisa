@@ -13,6 +13,7 @@
 #define LVS_IF_PASSED(ms)                                            \
   {                                                                  \
     static unsigned long __lvs_start_time = 0;                       \
+    {lvs_PerformScheduler();};                                       \
     if (!__lvs_start_time) __lvs_start_time = lvs_GetTickCount();    \
     if (lvs_GetTickCount() - __lvs_start_time > LVS_TICKS_PER_SECOND * ms / 1000) \
     {
@@ -21,6 +22,7 @@
     } else {                                                         \
 
 #define LVS_ENDIF()                                                  \
+      {lvs_PerformScheduler();};                                     \
       __lvs_start_time = lvs_GetTickCount();                         \
     }                                                                \
   }

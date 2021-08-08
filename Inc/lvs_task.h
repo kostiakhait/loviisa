@@ -27,15 +27,18 @@ struct ___lvs_task_context_##task                             \
 #define LVS_USE_TASK(task)                                    \
   LVS_ERROR_T __lvs_task_start_##task(void* arg);             \
   LVS_ERROR_T __lvs_task_init_##task(void* arg);              \
+  extern unsigned char __lvs_task_running_##task;
   
 // Start task initialization section
 #define LVS_TASK_INIT(task)                                   \
+  unsigned char __lvs_task_running_##task = 0;                \
   LVS_ERROR_T __lvs_task_start_##task(void* arg);             \
   LVS_ERROR_T __lvs_task_init_##task(void* arg)               \
   {                                                           \
     struct ___lvs_task_context_##task* lvs_context = &__lvs_task_context_##task;            \
     lvs_context->params = arg;                                \
-    lvs_context->__counter = 0LL;
+    lvs_context->__counter = 0LL;                             \
+    __lvs_task_running_##task = 1;
 
 // End task initialization and start task loop
 #define LVS_TASK_START(task)                                  \
@@ -47,11 +50,14 @@ struct ___lvs_task_context_##task                             \
   }};                                                         \
   LVS_ERROR_T __lvs_task_start_##task(void* arg)              \
   {                                                           \
-    struct ___lvs_task_context_##task* lvs_context = &__lvs_task_context_##task;
+    struct ___lvs_task_context_##task* lvs_context = &__lvs_task_context_##task; \
+    {lvs_PerformScheduler();};                                     
+
 
 // End task loop
 #define LVS_TASK_END(task)                                    \
   {                                                           \
+    {lvs_PerformScheduler();};                                \
     static LVS_GOTO_EVENT_PAYLOAD __task_end_ev_##task;       \
     __task_end_ev_##task.handler = &__lvs_task_start_##task;  \
     __task_end_ev_##task.arg = lvs_context->params;           \
@@ -60,16 +66,22 @@ struct ___lvs_task_context_##task                             \
   }}
 
 // Launch task
-#define LVS_TASK_RUN(task, params)                            \
-  {                                                           \
-    static LVS_GOTO_EVENT_PAYLOAD __task_run_ev_##task;       \
-    __task_run_ev_##task.handler = &__lvs_task_init_##task;   \
-    __task_run_ev_##task.arg = params;                        \
-    LVS_SEND(goto, &__task_run_ev_##task);                    \
+#define LVS_TASK_RUN(task, params)                              \
+  {                                                             \
+    if (!__lvs_task_running_##task)                             \
+    {                                                           \
+      static LVS_GOTO_EVENT_PAYLOAD __task_run_ev_##task;       \
+      __task_run_ev_##task.handler = &__lvs_task_init_##task;   \
+      __task_run_ev_##task.arg = params;                        \
+      __lvs_task_running_##task = 1;                            \
+      LVS_SEND(goto, &__task_run_ev_##task);                    \
+    }                                                           \
   }
 
 // Exit task from itself
-#define LVS_TASK_EXIT(task) {return LVS_OK;}
+#define LVS_TASK_EXIT(task) {__lvs_task_running_##task = 0; return LVS_OK;}
+
+#define LVS_IS_TASK_RUNNING(task) (__lvs_task_running_##task)
 
 // Get variable from task's context, only available from inside the task
 #define LVS_CTX(var) (lvs_context->var)

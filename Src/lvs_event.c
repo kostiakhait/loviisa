@@ -91,9 +91,14 @@ void lvs_RunScheduler(void)
   do
   {
     LVS_EVENT_T event;
-    LVS_ERROR_T err = lvs_ReadEvent(&event);
-    if (err == LVS_OK)
-      lvs_ScheduleEvent(event);
+    LVS_ERROR_T err;
+    do {
+      err = lvs_ReadEvent(&event);
+      if (err == LVS_OK)
+        lvs_ScheduleEvent(event);
+      else
+        break;
+    } while (1);
     lvs_OnTimer();
     lvs_SyncDrvBufs();
     LVS_IDLE();
@@ -104,7 +109,8 @@ void lvs_RunScheduler(void)
 LVS_ERROR_T lvs_PerformScheduler(void)
 {
   LVS_EVENT_T event;
-  LVS_ERROR_T err = lvs_ReadEvent(&event);
+  LVS_ERROR_T err;
+  err = lvs_ReadEvent(&event);
   if (err == LVS_OK)
     lvs_ScheduleEvent(event);
   return err;

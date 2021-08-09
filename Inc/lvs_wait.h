@@ -10,6 +10,8 @@
 #include "lvs_config.h"
 #include "lvs_bitmem.h"
 
+// Execute following portion of code only if time in ms passed since its last execution. Prevents
+// extra frequent execution of some code blocks
 #define LVS_IF_PASSED(ms)                                            \
   {                                                                  \
     static unsigned long __lvs_start_time = 0;                       \
@@ -18,9 +20,28 @@
     if (lvs_GetTickCount() - __lvs_start_time > LVS_TICKS_PER_SECOND * ms / 1000) \
     {
 
+// Execute given code only if flag is set (and resets the flag)
+#define LVS_IF_FLAG(num)                                             \
+  {                                                                  \
+    static unsigned long __lvs_start_time = 0;                       \
+    {lvs_PerformScheduler();};                                       \
+    if (lvs_GetFlag(num))                                            \
+    {                                                                \
+      {lvs_ResetFlag(num);}
+
+// Execute given code if the condition is true 
+#define LVS_IF(condition)                                            \
+  {                                                                  \
+    static unsigned long __lvs_start_time = 0;                       \
+    {lvs_PerformScheduler();};                                       \
+    if (condition)                                                   \
+    {
+
+// Else section for any of LVS_IF_ operations
 #define LVS_ELSE()                                                   \
     } else {                                                         \
 
+// End LVS_IF_ operation
 #define LVS_ENDIF()                                                  \
       {lvs_PerformScheduler();};                                     \
       __lvs_start_time = lvs_GetTickCount();                         \

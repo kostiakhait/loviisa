@@ -17,6 +17,7 @@ LVS_EVENT_HANDLERS __lvs_event_handler;
 
 static int __stop_scheduler = 0;
 static int __lock = 0;
+static int __scheduler_locked = 0;
 
 LVS_ERROR_T __lvs_goto(LVS_EVENT_T event)
 {
@@ -93,6 +94,8 @@ void lvs_RunScheduler(void)
     LVS_EVENT_T event;
     LVS_ERROR_T err;
     do {
+      if (__scheduler_locked)
+        break;
       err = lvs_ReadEvent(&event);
       if (err == LVS_OK)
         lvs_ScheduleEvent(event);
@@ -110,6 +113,8 @@ LVS_ERROR_T lvs_PerformScheduler(void)
 {
   LVS_EVENT_T event;
   LVS_ERROR_T err;
+  if (__scheduler_locked)
+    return LVS_RESOURCE_LOCKED;
   err = lvs_ReadEvent(&event);
   if (err == LVS_OK)
     lvs_ScheduleEvent(event);
@@ -125,4 +130,14 @@ void lvs_Init(void)
 {
   lvs_InitEventScheduler(); 
   lvs_InitFlags();
+};
+
+void lvs_LockScheduler(void)
+{
+  __scheduler_locked = 1;
+};
+
+void lvs_UnlockScheduler(void)
+{
+  __scheduler_locked = 0;
 };

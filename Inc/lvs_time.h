@@ -59,6 +59,19 @@ unsigned long lvs_GetTickCount(void);                             // Get number 
     __lvs_timer_##timer.enabled = 0;                              \
   }
 
+#define LVS_START_TIMEOUT(timer)                                  \
+  unsigned long __lvs_local_timer_##timer = lvs_GetTickCount();
+
+#define LVS_RESET_TIMEOUT(timer)                                  \
+  __lvs_local_timer_##timer = lvs_GetTickCount();
+
+#define LVS_IF_TIMEOUT(timer, ms)                                 \
+ {                                                                \
+   static unsigned long __lvs_start_time = 0;                     \
+   {lvs_PerformScheduler();};                                     \
+   if (lvs_GetTickCount() -  __lvs_local_timer_##timer > LVS_TICKS_PER_SECOND * ms / 1000)  \
+   {
+
 // Get paramters from existing timer structure
 #define LVS_GET_TIMER_PERIOD_MS(timer) (__lvs_timer_##timer.period_msec)
 #define LVS_GET_TIMER_EPOCH(timer) (__lvs_timer_##timer.epoch)

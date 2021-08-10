@@ -117,6 +117,8 @@ void lvs_RunScheduler(void);
 LVS_ERROR_T lvs_PerformScheduler(void);
 void lvs_StopScheduler(void);
 void lvs_Init(void);
+void lvs_LockScheduler(void);
+void lvs_UnlockScheduler(void);
 
 // Initialize the scheduler
 #define LVS_INIT() lvs_Init();
@@ -132,5 +134,8 @@ void lvs_Init(void);
     __event.payload = arg;                                        \
     lvs_SendEvent(__event);                                       \
   }
+
+#define LVS_BEGIN_CRITICAL_SECTION() lvs_LockScheduler()
+#define LVS_END_CRITICAL_SECTION() lvs_UnlockScheduler()
 
 #endif

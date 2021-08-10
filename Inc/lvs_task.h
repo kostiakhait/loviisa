@@ -53,7 +53,6 @@ struct ___lvs_task_context_##task                             \
     struct ___lvs_task_context_##task* lvs_context = &__lvs_task_context_##task; \
     {lvs_PerformScheduler();};                                     
 
-
 // End task loop
 #define LVS_TASK_END(task)                                    \
   {                                                           \
@@ -64,6 +63,40 @@ struct ___lvs_task_context_##task                             \
     LVS_SEND(goto, &__task_end_ev_##task);                    \
     lvs_context->__counter += 1LL;                            \
   }}
+
+#define LVS_USE_LOOP(task)                                    \
+  LVS_ERROR_T __lvs_loop_start_##task(void* arg);             \
+  extern unsigned char __lvs_loop_running_##task;
+
+// End task initialization and start task loop
+#define LVS_LOOP_START(task)                     \
+  LVS_ERROR_T __lvs_loop_start_##task(void* arg)              \
+  {                                                           \
+    struct __lvs_context {                                    \
+       unsigned long long __counter;                          \
+       void* params } __context, *lvs_context;                \
+    lvs_context = &__context;                                 \
+    lvs_context->params = arg;                                \
+    lvs_context->__counter = 0LL;                             \
+
+// End task loop
+#define LVS_LOOP_END(task)                                    \
+  {                                                           \
+    {lvs_PerformScheduler();};                                \
+    static LVS_GOTO_EVENT_PAYLOAD __task_end_ev_##task;       \
+    __task_end_ev_##task.handler = &__lvs_loop_start_##task;  \
+    __task_end_ev_##task.arg = lvs_context->params;           \
+    LVS_SEND(goto, &__task_end_ev_##task);                    \
+    lvs_context->__counter += 1LL;                            \
+  }}
+
+#define LVS_LOOP_RUN(task, params)                              \
+    {                                                           \
+      static LVS_GOTO_EVENT_PAYLOAD __task_run_ev_##task;       \
+      __task_run_ev_##task.handler = &__lvs_loop_start_##task;  \
+      __task_run_ev_##task.arg = params;                        \
+      LVS_SEND(goto, &__task_run_ev_##task);                    \
+    }                                                           \
 
 // Launch task
 #define LVS_TASK_RUN(task, params)                              \

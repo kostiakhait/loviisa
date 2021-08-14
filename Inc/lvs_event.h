@@ -135,6 +135,14 @@ void lvs_UnlockScheduler(void);
     lvs_SendEvent(__event);                                       \
   }
 
+#define LVS_RESEND(event)                                         \
+  {                                                               \
+    LVS_ERROR_T err;                                              \
+    do {                                                          \
+      err = lvs_SendEvent(event);                                 \
+    } while (err != LVS_OK);                                      \
+  }
+
 #define LVS_BEGIN_CRITICAL_SECTION() lvs_LockScheduler()
 #define LVS_END_CRITICAL_SECTION() lvs_UnlockScheduler()
 

@@ -118,6 +118,8 @@ LVS_ERROR_T lvs_PerformScheduler(void)
   err = lvs_ReadEvent(&event);
   if (err == LVS_OK)
     lvs_ScheduleEvent(event);
+  lvs_OnTimer();
+  lvs_SyncDrvBufs();
   return err;
 };
 

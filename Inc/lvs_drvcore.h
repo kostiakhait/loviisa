@@ -106,4 +106,35 @@ typedef struct __LVS_OUTPUT_PAYLOAD
     LVS_GET_INPUT_PIPE(name).on_data = LVS_GET_EVENT_TYPE(event_##name); \
   }
 
+#define LVS_DEV_DATA_RX_EVENT(name) (event_##name##_input_pipe)
+
+#define LVS_DRV_DEFINE_INTERFACE(name, tx_size, rx_size)          \
+  LVS_DEFINE_OUTPUT(name##_output_pipe, tx_size);                 \
+  LVS_DEFINE_INPUT(name##_input_pipe, rx_size);
+
+#define LVS_DRV_USE_INTERFACE(name)                               \
+  LVS_USE_OUTPUT(name##_output_pipe);                             \
+  LVS_USE_INPUT(name##_input_pipe);
+
+#define LVS_DRV_BEGIN_INIT_INTERFACE(name)                        \
+  LVS_INIT_INPUT(name##_input_pipe);                              \
+  LVS_INIT_OUTPUT(name##_output_pipe);                            \
+  {
+
+#define LVS_DRV_END_INIT_INTERFACE(name)                          \
+  }
+
+#define LVS_DRV_READ_INTERFACE_RX(name, dataptr, sizeptr)         \
+  LVS_READ_PIPE(pipe_##name##_input_pipe, dataptr, sizeptr);
+
+#define LVS_DRV_WRITE_INTERFACE_RX(name, dataptr, size)           \
+  LVS_WRITE_PIPE(pipe_##name##_input_pipe, dataptr, size)
+
+#define LVS_DRV_READ_INTERFACE_TX(name, dataptr, sizeptr)         \
+  LVS_READ_PIPE(pipe_##name##_output_pipe, dataptr, sizeptr);
+
+#define LVS_DRV_WRITE_INTERFACE_TX(name, dataptr, size)           \
+  LVS_WRITE_PIPE(pipe_##name##_output_pipe, dataptr, size)
+
+
 #endif

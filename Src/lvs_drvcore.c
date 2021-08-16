@@ -69,7 +69,6 @@ void lvs_SyncDrvBufs()
   while (channel)
   {
     __lvs_SyncPipe(channel);
-    lvs_PerformScheduler();
     channel = channel->next;
   };
 };

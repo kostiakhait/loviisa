@@ -18,7 +18,9 @@ typedef enum __LVS_ERROR
   LVS_WRONG_ARGUMENT  = 0x0201,     // Improper argument value provided for the operation
   LVS_OVERFLOW        = 0x0202,     // Queue overflow
   LVS_UNDERFLOW       = 0x0203,     // Queue underflow
-  LVS_WRONG_FLAG_NO   = 0x0204      // Flag number too big
+  LVS_WRONG_FLAG_NO   = 0x0204,     // Flag number too big
+  LVS_DRV_NOT_FOUND   = 0x1001,     // Resource or address not found in the driver
+  LVS_DRV_OUT_OF_RANGE= 0x1002      // Address or parameter out of range in the driver
 } LVS_ERROR_T;                      // Error response type
 
 #endif

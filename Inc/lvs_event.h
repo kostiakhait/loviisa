@@ -91,6 +91,21 @@ extern LVS_EVENT_HANDLERS __lvs_event_handler;
     };                                                            \
   }
 
+#define LVS_ADD_SUBSCRIBER_V(typev, subs)                        \
+  {                                                               \
+    LVS_EVENT_ID_REC* __current = __lvs_event_handler.handlers;   \
+    while (0L != __current)                                       \
+    {                                                             \
+      if (__current->id == typev.id)                              \
+      {                                                           \
+        __lvs_event_subs_##subs.next = __current->subscribers;    \
+        __current->subscribers = &__lvs_event_subs_##subs;        \
+         break;                                                   \
+      };                                                          \
+      __current = __current->next;                                \
+    };                                                            \
+  }
+
 // Auxiliary definition of the event queue of the given size
 #define LVS_DEFINE_EVENT_QUEUE(size)                              \
   LVS_DEFINE_RINGBUF(lvs_event_queue, sizeof(LVS_EVENT_T) * size)
@@ -145,5 +160,7 @@ void lvs_UnlockScheduler(void);
 
 #define LVS_BEGIN_CRITICAL_SECTION() lvs_LockScheduler()
 #define LVS_END_CRITICAL_SECTION() lvs_UnlockScheduler()
+
+#define LVS_YIELD() {lvs_PerformScheduler();}
 
 #endif

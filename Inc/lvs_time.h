@@ -70,7 +70,7 @@ unsigned long lvs_GetTickCount(void);                             // Get number 
    static unsigned long __lvs_start_time = 0;                     \
    {lvs_PerformScheduler();};                                     \
    if (lvs_GetTickCount() -  __lvs_local_timer_##timer > LVS_TICKS_PER_SECOND * ms / 1000)  \
-   {{__lvs_local_timer_##timer = lvs_GetTickCount();}
+   {
 
 // Get paramters from existing timer structure
 #define LVS_GET_TIMER_PERIOD_MS(timer) (__lvs_timer_##timer.period_msec)

@@ -53,7 +53,7 @@ unsigned long long lvs_BitmemReadRingbuf(LVS_BIT_RINGBUF* brb, unsigned char num
   extern const unsigned int __lvs_bitmem_size_##name;           \
   extern unsigned char* name;
 
-#define LVS_BITMEM(name) (__lvs_bitmem_##name)
+#define LVS_BITMEM(name) (name)
 #define LVS_BITMEM_SIZE(name) (__lvs_bitmem_size_##name)
 
 #endif

@@ -7,8 +7,6 @@ static const unsigned char __signature2 = 0xF0;
 static unsigned char validator[2] = {__signature1, __signature2};
 static unsigned char invalidator[2] = {0, 0};
 
-LVS_FS_DEFINE_BANK(fs_mem, 0xF0000000, 4096 * 1024, 4096);
-
 static LVS_ERROR_T __lvs_fs_reread_bank_mem(LVS_BANK_T* bank)
 {
   int size = (bank->bank_size / bank->page_size - 2) * sizeof(unsigned short);

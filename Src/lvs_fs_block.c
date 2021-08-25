@@ -1,5 +1,4 @@
 #include "lvs_fs_block.h"
-#include "lvs_error.h"
 #include "lvs_drv_flash.h"
 #include "lvs_mem.h"
 
@@ -16,7 +15,7 @@ static LVS_ERROR_T __lvs_fs_reread_bank_mem(LVS_BANK_T* bank)
   return lvs_FlashRead(bank->bank_address + bank->system_page * bank->page_size + 2, bank->ram_block, size);
 };
 
-static LVS_ERROR_T __lvs_fs_init(LVS_BANK_T* bank)
+LVS_ERROR_T lvsFS_InitBank(LVS_BANK_T* bank)
 {
   unsigned char signatures[2];
   LVS_ERROR_T result;
@@ -66,7 +65,7 @@ static LVS_ERROR_T __lvs_fs_write_bank_mem(LVS_BANK_T* bank)
   return result;
 };
 
-static LVS_ERROR_T __lvs_fs_format_bank(LVS_BANK_T* bank)
+LVS_ERROR_T lvsFS_FormatBank(LVS_BANK_T* bank)
 {
   LVS_ERROR_T result = lvs_FlashErase(bank->bank_address);
   if (result != LVS_OK)
@@ -116,13 +115,38 @@ static LVS_ERROR_T __lvs_fs_allocate_pages(LVS_BANK_T* bank, unsigned short page
     return LVS_OK;
 };
 
+LVS_ERROR_T lvsFS_Allocate(LVS_BANK_T* bank, unsigned short pages, unsigned short* first_page)
+{
+  return __lvs_fs_allocate_pages(bank, pages, first_page, 1);
+}
+
 static unsigned short __lvs_fs_get_next_page(LVS_BANK_T* bank, unsigned short current)
 {
   unsigned short* mem = (unsigned short*) bank->ram_block;
   return mem[current];
 };
 
-static LVS_ERROR_T __lvs_fs_append(LVS_BANK_T* bank, unsigned short start, unsigned short pages)
+unsigned short lvsFS_GetNext(LVS_BANK_T* bank, unsigned short current)
+{
+  return __lvs_fs_get_next_page(bank, current);
+};
+
+unsigned short lvsFS_GetPage(LVS_BANK_T* bank, unsigned short start, int number)
+{
+  unsigned short next = start;
+  unsigned short* mem = (unsigned short*) bank->ram_block;
+  int len = 0;
+  do
+  {
+    if (len == number)
+      return next;
+    next = mem[next];
+    len += 1;
+  } while (next);
+  return 0xFFFF;
+};
+
+LVS_ERROR_T lvsFS_Append(LVS_BANK_T* bank, unsigned short start, unsigned short pages)
 {
   unsigned short page_ptr = start;
   unsigned short next;
@@ -142,7 +166,7 @@ static LVS_ERROR_T __lvs_fs_append(LVS_BANK_T* bank, unsigned short start, unsig
   return __lvs_fs_write_bank_mem(bank);
 }; 
 
-static LVS_ERROR_T __lvs_fs_truncate(LVS_BANK_T* bank, unsigned short start, unsigned short pages)
+LVS_ERROR_T lvsFS_Truncate(LVS_BANK_T* bank, unsigned short start, unsigned short pages)
 {
   unsigned short page_ptr = start;
   unsigned short next;
@@ -167,7 +191,7 @@ static LVS_ERROR_T __lvs_fs_truncate(LVS_BANK_T* bank, unsigned short start, uns
   return __lvs_fs_write_bank_mem(bank);
 };
 
-static int __lvs_fs_get_length(LVS_BANK_T* bank, unsigned short start)
+int lvsFS_GetLength(LVS_BANK_T* bank, unsigned short start)
 {
   unsigned short next = start;
   int len = 0;
@@ -179,16 +203,44 @@ static int __lvs_fs_get_length(LVS_BANK_T* bank, unsigned short start)
   return len;
 };
 
-void __lvs_fs_test()
+LVS_ERROR_T lvsFS_Erase(LVS_BANK_T* bank, unsigned short start)
+{
+  unsigned short next = start;
+  unsigned short* mem = (unsigned short*) bank->ram_block;
+  do
+  {
+    unsigned short prev = next;
+    next = __lvs_fs_get_next_page(bank, next);
+    mem[prev] = 0xFFFF;
+  } while (next);
+  return __lvs_fs_write_bank_mem(bank);
+};
+
+LVS_ERROR_T lvsFS_Write(LVS_BANK_T* bank, unsigned short page, unsigned short offset, unsigned char* data, int size)
+{
+  unsigned long address = bank->bank_address + bank->page_size * (page + 2) + offset;
+  return lvs_FlashWrite(address, data, size);
+};
+
+LVS_ERROR_T lvsFS_Rewrite(LVS_BANK_T* bank, unsigned short page, unsigned short offset, unsigned char* data, int size)
 {
   LVS_ERROR_T result;
-  unsigned short first_page;
-  int len1, len2;
-  result = __lvs_fs_init(&LVS_FS_BANK(fs_mem));
-  result = __lvs_fs_format_bank(&LVS_FS_BANK(fs_mem));
-  result = __lvs_fs_allocate_pages(&LVS_FS_BANK(fs_mem), 10, &first_page, 1);
-  result = __lvs_fs_append(&LVS_FS_BANK(fs_mem), first_page, 15);
-  len1 = __lvs_fs_get_length(&LVS_FS_BANK(fs_mem), first_page);
-  result = __lvs_fs_truncate(&LVS_FS_BANK(fs_mem), first_page, 5);
-  len2 = __lvs_fs_get_length(&LVS_FS_BANK(fs_mem), first_page);
+  result = lvs_FlashRead(bank->bank_address + bank->page_size * (page + 2), bank->ram_block, bank->page_size);
+  if (result != LVS_OK)
+    return result;
+  result = lvs_FlashErase(bank->bank_address + bank->page_size * (page + 2));
+  if (result != LVS_OK)
+    return result;
+  lvs_memcpy(bank->ram_block + offset, data, size);
+  result = lvs_FlashWrite(bank->bank_address + bank->page_size * (page + 2), bank->ram_block, bank->page_size);
+  if (result != LVS_OK)
+    return result;
+  result = __lvs_fs_reread_bank_mem(bank);
+  return result;
+};
+
+LVS_ERROR_T lvsFS_Read(LVS_BANK_T* bank, unsigned short page, unsigned short offset, unsigned char* data, int size)
+{
+  unsigned long address = bank->bank_address + bank->page_size * (page + 2) + offset;
+  return lvs_FlashRead(address, data, size);
 };

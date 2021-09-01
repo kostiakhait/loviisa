@@ -20,6 +20,10 @@ typedef struct __LVS_RINGBUF
 } LVS_RINGBUF_T;
 
 // Define ring buffer structures. Shall be used once outside of all functions
+#define LVS_USE_RINGBUF(name)                            \
+  extern LVS_RINGBUF_T __lvs_ringbuf_##name;
+
+// Define ring buffer structures. Shall be used once outside of all functions
 #define LVS_DEFINE_RINGBUF(name, size)                  \
   LVS_RINGBUF_T __lvs_ringbuf_##name;                   \
   unsigned char __lvs_ringbuf_data_##name[size];        \

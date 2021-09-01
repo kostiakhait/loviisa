@@ -40,7 +40,10 @@ LVS_ERROR_T lvsFS_InitBank(LVS_BANK_T* bank)
   signatures[1] = __signature2;
   bank->system_page = 0;
   lvs_memset(bank->ram_block, 0xFF, bank->page_size);
-  return lvs_FlashWrite(bank->bank_address, signatures, 2);
+  result = lvs_FlashWrite(bank->bank_address, signatures, 2);
+  if (result != LVS_OK)
+    return result;
+  return LVS_INIT_REQUIRED;
 };
 
 static LVS_ERROR_T __lvs_fs_write_bank_mem(LVS_BANK_T* bank)

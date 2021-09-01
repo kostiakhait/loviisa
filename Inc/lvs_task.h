@@ -50,13 +50,11 @@ struct ___lvs_task_context_##task                             \
   }};                                                         \
   LVS_ERROR_T __lvs_task_start_##task(void* arg)              \
   {                                                           \
-    struct ___lvs_task_context_##task* lvs_context = &__lvs_task_context_##task; \
-    {lvs_PerformScheduler();};                                     
+    struct ___lvs_task_context_##task* lvs_context = &__lvs_task_context_##task; 
 
 // End task loop
 #define LVS_TASK_END(task)                                    \
   {                                                           \
-    {lvs_PerformScheduler();};                                \
     static LVS_GOTO_EVENT_PAYLOAD __task_end_ev_##task;       \
     __task_end_ev_##task.handler = &__lvs_task_start_##task;  \
     __task_end_ev_##task.arg = lvs_context->params;           \
@@ -113,6 +111,7 @@ struct ___lvs_task_context_##task                             \
 
 // Exit task from itself
 #define LVS_TASK_EXIT(task) {__lvs_task_running_##task = 0; return LVS_OK;}
+#define LVS_LOOP_EXIT(task) {return LVS_OK;}
 
 #define LVS_IS_TASK_RUNNING(task) (__lvs_task_running_##task)
 
@@ -125,5 +124,14 @@ struct ___lvs_task_context_##task                             \
 // Get task loop counter
 #define LVS_TASK_COUNTER(task) (lvs_context->__counter)
 #define LVS_TASK_PARAM(task) (lvs_context->params)
+
+// Main function replacement
+#define LVS_MAIN_BEGIN()                                        \
+  int main(int argc, char** argv) {                             \
+    LVS_INIT()                                                  \
+
+#define LVS_MAIN_END()                                          \
+    LVS_RUN();                                                  \
+  }
 
 #endif

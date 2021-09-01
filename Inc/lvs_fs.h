@@ -14,8 +14,12 @@ typedef struct __LVS_FS_FD
   LVS_ERROR_T error;
   LVS_BANK_T* bank;
   unsigned short file_desc;
+  int size;
+  unsigned short attributes;
 } LVSFS_FD;
 
+// Initialize the file system
+LVS_ERROR_T lvsFS_Init(LVS_BANK_T* bank);
 // Create new file in the given directory
 LVSFS_FD lvsFS_CreateFile(LVSFS_FD* dir, char* name);
 // Read data from the file

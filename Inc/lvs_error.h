@@ -25,7 +25,8 @@ typedef enum __LVS_ERROR
   LVS_DRV_OUT_OF_RANGE= 0x1002,     // Address or parameter out of range in the driver
   LVS_DRV_SIGN_ERROR  = 0x1003,     // Wrong data signature or CRC
   LVS_DRV_OUTDATED    = 0x1004,     // Data outdated or replaced
-  LVS_DRV_INVALID     = 0x1005      // Block marked as invalid
+  LVS_DRV_INVALID     = 0x1005,     // Block marked as invalid
+  LVS_INIT_REQUIRED   = 0x2001      // Operation performed but initialization required
 } LVS_ERROR_T;                      // Error response type
 
 #endif

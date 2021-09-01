@@ -7,6 +7,8 @@ LVS_ERROR_T __lvs_fs_create_global_dir(LVS_BANK_T* bank);
 
 #define ASSERT_FD(fd) {if ((fd).file_desc > (fd).bank->bank_size / (fd).bank->page_size - 2) LVS_FATAL_ERROR();}
 
+#define offset_of(structure, field) ((int)((unsigned char*) &structure.field - (unsigned char*) &structure))
+
 typedef struct __LVS_FS_FILE_HEADER
 {
   char name[LVS_FS_FILE_NAME_SIZE];
@@ -83,7 +85,7 @@ int lvsFS_WriteFile(LVSFS_FD* fd, unsigned long offset, unsigned char* data, int
     return 0;
   if (fh.size < size + offset)
   {
-    int pages_to_be = (size + offset - fh.size + fd->bank->page_size - 1) / fd->bank->page_size;
+    int pages_to_be = (size + offset + fd->bank->page_size - 1) / fd->bank->page_size;
     int pages_now = lvsFS_GetLength(fd->bank, fd->file_desc);
     if (pages_to_be > pages_now)
     {
@@ -92,7 +94,8 @@ int lvsFS_WriteFile(LVSFS_FD* fd, unsigned long offset, unsigned char* data, int
         return 0;
     };
     fh.size = size + offset;
-    __lvs_fs_write_file_header(fd, &fh);
+    fd->size = fh.size;
+    fd->error = lvsFS_Rewrite(fd->bank, fd->file_desc, offset_of(fh, size), (unsigned char*) &fh.size, sizeof(fh.size));
   };
   unsigned long page = (offset + sizeof(LVS_FS_FILE_HEADER)) / fd->bank->page_size;
   offset = (offset + sizeof(LVS_FS_FILE_HEADER)) % fd->bank->page_size;
@@ -137,10 +140,13 @@ int lvsFS_WriteFile(LVSFS_FD* fd, unsigned long offset, unsigned char* data, int
 int lvsFS_GetFileSize(LVSFS_FD* fd)
 {
   ASSERT_FD(*fd);
+  if (fd->size > 0)
+    return fd->size;
   LVS_FS_FILE_HEADER fh;
   __lvs_fs_read_file_header(fd, &fh);
   if (fd->error != LVS_OK)
     return 0;
+  fd->size = fh.size;
   return fh.size;
 };
 
@@ -158,12 +164,28 @@ LVS_ERROR_T lvsFS_Format(LVS_BANK_T* bank)
   return dir.error;
 };
 
+LVS_ERROR_T lvsFS_Init(LVS_BANK_T* bank)
+{
+  LVS_ERROR_T result = lvsFS_InitBank(bank);
+  if (result != LVS_INIT_REQUIRED)
+    return result;
+  result = __lvs_fs_create_global_dir(bank);
+  if (result != LVS_OK)
+    return result;
+  LVSFS_FD dir = lvsFS_OpenGlobalDir(bank);
+  ASSERT_FD(dir);
+  lvsFS_SetAttr(&dir, LVS_FS_ATTR_DIR);
+  return dir.error;
+};
+
 LVSFS_FD lvsFS_OpenGlobalDir(LVS_BANK_T* bank)
 {
   LVSFS_FD result;
   result.bank = bank;
   result.error = LVS_OK;
   result.file_desc = 0;
+  result.size = -1;
+  result.attributes = (unsigned short) -1;
   return result;
 };
 
@@ -181,10 +203,13 @@ void lvsFS_SetAttr(LVSFS_FD* fd, unsigned short attrs)
 unsigned short lvsFS_GetAttr(LVSFS_FD* fd)
 {
   ASSERT_FD(*fd);
+  if (fd->attributes != (unsigned short) -1)
+    return fd->attributes;
   LVS_FS_FILE_HEADER header;
   fd->error = lvsFS_Read(fd->bank, fd->file_desc, 0, (unsigned char*)&header, sizeof(LVS_FS_FILE_HEADER));
   if (fd->error != LVS_OK)
     return 0xFFFF;
+  fd->attributes = header.attributes;
   return header.attributes;
 };
 
@@ -197,7 +222,7 @@ static LVSFS_FD __lvs_fs_find(LVSFS_FD* dir, char* name)
   for (int i = 0; i < size / 2; i++)
   {
     int read = lvsFS_ReadFile(dir, i * 2, (unsigned char*) &item, sizeof(unsigned short));
-    if ((dir->error != LVS_OK) || (read != sizeof(unsigned short)))
+    if ((dir->error != LVS_OK) || (read != sizeof(unsigned short)) || (item == 0xFFFF))
     {
       result.error = LVS_IO_ERROR;
       return result;
@@ -230,6 +255,8 @@ static LVSFS_FD __lvs_fs_create_file(LVS_BANK_T* bank, char* name)
     LVSFS_FD result;
     result.bank = bank;
     result.error = lvsFS_Allocate(bank, 1, &result.file_desc);
+    result.size = -1;
+    result.attributes = (unsigned short) -1;
     if (result.error != LVS_OK)
       return result;
     LVS_FS_FILE_HEADER header;
@@ -238,7 +265,7 @@ static LVSFS_FD __lvs_fs_create_file(LVS_BANK_T* bank, char* name)
       header.name[i] = name[i];
     header.attributes = 0;
     header.size = 0;
-    result.error = lvsFS_Write(bank, result.file_desc, 0, (unsigned char*) &header, sizeof(header));
+    result.error = lvsFS_Rewrite(bank, result.file_desc, 0, (unsigned char*) &header, sizeof(header));
     if (result.error != LVS_OK)
     {
       lvsFS_Erase(bank, result.file_desc);
@@ -282,9 +309,9 @@ LVSFS_FD lvsFS_OpenFile(LVSFS_FD* dir, char* name)
   return result;
 };
 
-LVS_ERROR_T lvsFS_CloseFile(LVSFS_FD* dir)
+LVS_ERROR_T lvsFS_CloseFile(LVSFS_FD* fd)
 {
-  ASSERT_FD(*dir);
+  ASSERT_FD(*fd);
   return LVS_OK;
 };
 
@@ -326,11 +353,11 @@ void lvsFS_TruncateFile(LVSFS_FD* fd, int size)
   if (fd->error != LVS_OK)
     return;
   LVS_FS_FILE_HEADER header;
-  fd->error = lvsFS_Read(fd->bank, fd->file_desc, 0, (unsigned char*)&header, sizeof(LVS_FS_FILE_HEADER));
+  fd->error = lvsFS_Read(fd->bank, fd->file_desc, offset_of(header, size), (unsigned char*)&header.size, sizeof(header.size));
   if (fd->error != LVS_OK)
     return;
   header.size = size;
-  fd->error = lvsFS_Rewrite(fd->bank, fd->file_desc, 0, (unsigned char*)&header, sizeof(LVS_FS_FILE_HEADER));  
+  fd->error = lvsFS_Rewrite(fd->bank, fd->file_desc, offset_of(header, size), (unsigned char*)&header.size, sizeof(header.size));  
 };
 
 LVS_ERROR_T lvsFS_RenameFile(LVSFS_FD* dir, char* old_name, char* new_name)
@@ -343,18 +370,15 @@ LVS_ERROR_T lvsFS_RenameFile(LVSFS_FD* dir, char* old_name, char* new_name)
   if (_fd.error != LVS_NOT_FOUND)
     return LVS_ALREADY_EXISTS;
   LVS_FS_FILE_HEADER header;
-  fd.error = lvsFS_Read(fd.bank, fd.file_desc, 0, (unsigned char*)&header, sizeof(LVS_FS_FILE_HEADER));
-  if (fd.error != LVS_OK)
-    return fd.error;
   lvs_memcpy(&header.name[0], new_name, LVS_FS_FILE_NAME_SIZE);
-  return lvsFS_Rewrite(fd.bank, fd.file_desc, 0, (unsigned char*)&header, sizeof(LVS_FS_FILE_HEADER));  
+  return lvsFS_Rewrite(fd.bank, fd.file_desc, offset_of(header, name), (unsigned char*)&header.name, sizeof(header.name));  
 };
 
 char* lvsFS_GetFileName(LVSFS_FD* fd)
 {
   ASSERT_FD(*fd);
   static LVS_FS_FILE_HEADER header;
-  fd->error = lvsFS_Read(fd->bank, fd->file_desc, 0, (unsigned char*)&header, sizeof(LVS_FS_FILE_HEADER));
+  fd->error = lvsFS_Read(fd->bank, fd->file_desc, offset_of(header, name), (unsigned char*)&header.name, sizeof(header.name));
   if (fd->error != LVS_OK)
     return 0L;
   return &header.name[0];

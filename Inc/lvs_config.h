@@ -16,18 +16,12 @@
 #endif
 
 // Number of flags used
-#ifndef LVS_FLAGS_USED
 #define LVS_FLAGS_USED 1
-#endif
 
 // Fatal error handler
-#ifndef LVS_FATAL_ERROR
 #define LVS_FATAL_ERROR() {while (1);}
-#endif
 
 // Ticks per second
-#ifndef LVS_TICKS_PER_SECOND
 #define LVS_TICKS_PER_SECOND 512
-#endif
 
 #endif

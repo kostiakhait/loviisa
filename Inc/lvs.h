@@ -14,5 +14,7 @@
 #include "lvs_time.h"
 #include "lvs_wait.h"
 #include "lvs_smach.h"
+#include "lvs_cb.h"
+#include "lvs_pwm.h"
 
 #endif

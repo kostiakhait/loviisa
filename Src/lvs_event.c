@@ -5,6 +5,7 @@
 /********************************************************************************/
 #include "lvs_event.h"
 #include "lvs_config.h"
+#include "lvs_cb.h"
 
 void lvs_OnTimer(void);
 void lvs_SyncDrvBufs(void);
@@ -132,6 +133,7 @@ void lvs_Init(void)
 {
   lvs_InitEventScheduler(); 
   lvs_InitFlags();
+  __lvsCBInit();
 };
 
 void lvs_LockScheduler(void)

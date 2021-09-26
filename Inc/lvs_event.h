@@ -163,4 +163,6 @@ void lvs_UnlockScheduler(void);
 
 #define LVS_YIELD() {lvs_PerformScheduler();}
 
+LVS_USE_EVENT_TYPE(null);
+
 #endif

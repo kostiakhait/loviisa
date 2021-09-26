@@ -13,6 +13,7 @@ void lvs_SyncDrvBufs(void);
 LVS_DEFINE_EVENT_QUEUE(LVS_EVENT_QUEUE_SIZE);
 
 LVS_DEFINE_EVENT_TYPE(goto);
+LVS_DEFINE_EVENT_TYPE(null);
 
 LVS_EVENT_HANDLERS __lvs_event_handler;
 
@@ -34,6 +35,7 @@ void lvs_InitEventScheduler(void)
 {
   LVS_RINGBUF_INIT(lvs_event_queue);
   LVS_CREATE_EVENT_TYPE(goto);
+  LVS_CREATE_EVENT_TYPE(null)
   LVS_ADD_SUBSCRIBER(goto, __lvs_goto);
 };
 

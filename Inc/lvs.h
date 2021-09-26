@@ -16,5 +16,6 @@
 #include "lvs_smach.h"
 #include "lvs_cb.h"
 #include "lvs_pwm.h"
+#include "lvs_vreg.h"
 
 #endif

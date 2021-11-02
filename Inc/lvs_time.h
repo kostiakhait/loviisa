@@ -7,6 +7,7 @@
 #define __LVS_TIME_H__
 
 #include "lvs_event.h"
+#include "lvs_cb.h"
 
 // Timer handler structure
 typedef struct __LVS_TIMER
@@ -77,5 +78,38 @@ unsigned long lvs_GetTickCount(void);                             // Get number 
 #define LVS_GET_TIMER_EPOCH(timer) (__lvs_timer_##timer.epoch)
 #define LVS_IS_TIMER_ENABLED(timer) (__lvs_timer_##timer.enabled)
 #define LVS_IS_TIMER_PERIODIC(timer) (__lvs_timer_##timer.periodic)
+
+typedef struct __LVS_DELAYED_CALL
+{
+  LVS_CB_CALL_T cb;
+  unsigned long start_time;
+  unsigned long delay;
+  unsigned char active;
+  struct __LVS_DELAYED_CALL* next;
+} LVS_DELAYED_CALL_T;
+
+extern LVS_DELAYED_CALL_T* __lvs_delayed_calls;
+
+#define LVS_DEFINE_DELAYED_CALL(name) \
+  LVS_DELAYED_CALL_T __lvs_delayed_call_##name;
+
+#define LVS_USE_DELAYED_CALL(name) \
+  LVS_DELAYED_CALL_T __lvs_delayed_call_##name;
+
+#define LVS_INIT_DELAYED_CALL(name) \
+  {                                                             \
+    __lvs_delayed_call_##name.active = 0;                       \
+    __lvs_delayed_call_##name.next = __lvs_delayed_calls;       \
+    __lvs_delayed_calls = &__lvs_delayed_call_##name;           \
+  }
+
+#define LVS_DELAYED_CALL(name, proc, argument, delay_ms) \
+  {                                                             \
+    __lvs_delayed_call_##name.start_time = lvs_GetTickCount();  \
+    __lvs_delayed_call_##name.cb.callback = &proc;              \
+    __lvs_delayed_call_##name.cb.arg = argument;                \
+    __lvs_delayed_call_##name.delay = delay_ms;                 \
+    __lvs_delayed_call_##name.active = 1;                       \
+  }
 
 #endif

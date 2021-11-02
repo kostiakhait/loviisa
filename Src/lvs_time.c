@@ -7,6 +7,7 @@
 
 LVS_TIMER_T* __lvs_timers = 0L;
 static unsigned long __tick_count = 0;
+LVS_DELAYED_CALL_T* __lvs_delayed_calls = 0L;
 
 void lvs_TimerTick(void)
 {
@@ -18,7 +19,7 @@ unsigned long lvs_GetTickCount(void)
   return __tick_count;
 };
 
-void lvs_OnTimer(void)
+void __lvs_OnTimer(void)
 {
   LVS_TIMER_T* timer = __lvs_timers;
   while (timer)
@@ -41,4 +42,29 @@ void lvs_OnTimer(void)
     };
     timer = timer->next;
   };
+};
+
+void __lvs_OnDelayedCalls(void)
+{
+  LVS_DELAYED_CALL_T* dcall = __lvs_delayed_calls;
+  while (dcall)
+  {
+    if (dcall->active)
+    {
+      unsigned long ticks_passed = __tick_count - dcall->start_time;
+      unsigned long period_in_ticks = (dcall->delay * LVS_TICKS_PER_SECOND) / 1000;
+      if (ticks_passed >= period_in_ticks)
+      {
+        dcall->active = 0;
+        lvsCall(dcall->cb.callback, dcall->cb.arg);
+      };
+    };
+    dcall = dcall->next;
+  };
+};
+
+void lvs_OnTimer(void)
+{
+  __lvs_OnTimer();
+  __lvs_OnDelayedCalls();
 };

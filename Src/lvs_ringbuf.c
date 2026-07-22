@@ -1,5 +1,5 @@
 /********************************************************************************/
-/* Loviisa Embedded Operating System * Copyright (C) LigerWays, 2013-2021       */
+/* Loviisa Embedded Operating System * Copyright (C) Konstantin Khait, 2013-2021*/
 /********************************************************************************/
 /* Ring buffer implementation. Used for events queue and can be used by the     */
 /* application code                                                             */
